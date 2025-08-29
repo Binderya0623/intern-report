@@ -64,7 +64,7 @@ Order классын бүх талбар, аргуудаар статик унш
 \end{lstlisting}
 
 \subsubsection{"Singleton" үлгэр загвар}
-OrderManagement классын статик талбар дээр шууд \verb|new Auftragsverwaltung()| дуудаж байгаа нь "eager initialization"\footnote{"Eager initialization" нь програмчлалын стратеги бөгөөд объект эсвэл нөөцийг анх ашиглахыг хүсэх хүртэл хүлээх биш, агуулагдсан класс нь ачаалагдсан даруйд үүсгэгддэг.} бөгөөд тредүүдэд аюулгүй байдаг боловч хэзээ ч ашиглагдахгүй объект байгуулагдах эрсдэлтэй. Мөн \verb|DAOFactory.getInstance()| гэх мэт глобал хандалтын цэгүүдийг ажиглалаа.   Класс нь өөрөө "Observer"-ыг хэрэгжүүлж, менежментийн үүрэг гүйцэт- гэж байгаа ч байгуулагчийг private гэж огт заагаагүй тул шинэ Auftragsverwaltung объектыг байгуулж параллел объект үүсгэх эрсдэлтэй. \verb|hinzufuegen()| дотор \verb|auf.addObserver(this)| гэж байгаа нь Singleton объект өөрөө Observable объектын өөрчлөлтийг хүлээн авч DAO-руу update илгээж байна. Энэ бүх ажиглалтуудаас жинхэнэ "Singleton" үлгэр загварыг ашиглаагүй гэж дүгнэлээ. Харин өөр нэг үлгэр загварыг олсон нь "Observer" юм. Үүнийг дараагийн хэсэгт тайлбарлав.
+OrderManagement классын статик талбар дээр шууд \verb|new Auftragsverwaltung()| дуудаж байгаа нь "eager initialization"\footnote{"Eager initialization" нь програмчлалын стратеги бөгөөд объект эсвэл нөөцийг анх ашиглахыг хүсэх хүртэл хүлээх биш, агуулагдсан класс нь ачаалагдсан даруйд үүсгэгддэг.} бөгөөд тредүүдэд аюулгүй байдаг боловч хэзээ ч ашиглагдахгүй объект байгуулагдах эрсдэлтэй. Мөн \verb|DAOFactory.getInstance()| гэх мэт глобал хандалтын цэгүүдийг ажиглалаа.   Класс нь өөрөө "Observer"-ыг хэрэгжүүлж, менежментийн үүрэг гүйцэт- гэж байгаа ч байгуулагчийг private гэж огт заагаагүй тул шинэ Auftragsverwaltung объектыг байгуулж параллел объект үүсгэх эрсдэлтэй. \verb|hinzufuegen()| дотор \verb|auf.addObserver(this)| гэж байгаа нь Singleton объект өөрөө Observable объектын өөрчлөлтийг хүлээн авч DAO-руу өөрчлөлт илгээж байна. Энэ бүх ажиглалтуудаас жинхэнэ "Singleton" үлгэр загварыг ашиглаагүй гэж дүгнэлээ. Харин өөр нэг үлгэр загварыг олсон нь "Observer" юм. Үүнийг дараагийн хэсэгт тайлбарлав.
 \begin{lstlisting}[language=Java, caption=OrderManagement классын арга hinzufuegen, frame=single]
   private static Auftragsverwaltung eineAuftragsverwaltung = new Auftragsverwaltung();
 
@@ -88,139 +88,9 @@ OrderManagement классын статик талбар дээр шууд \verb
 
 \subsubsection{"Observer" үлгэр загвар}
 
-OrderManagement классын \verb|hinzufuegen()| дотор \verb|auf.addObserver(this)| гэж байгаа нь Singleton объект өөрөө Observable объектын өөрчлөлтийг хүлээн авч DAO-руу update илгээж байна. Үүнийг ажигласнаар "Observer" үлгэр загвар ашиглагдсан гэж дүгнэлээ. Үлгэр загварын бүтэц, оролцогчдыг \ref{fig:observer} диаграммаар үзүүлэв. Үүнд:
+OrderManagement классын \verb|hinzufuegen()| арга дотор \verb|auf.addObserver(this)| гэж байгаа нь Singleton объект өөрөө Observable объектын өөрчлөлтийг хүлээн авч DAO-руу өөрчлөлт илгээж байна. Үүнийг ажигласнаар "Observer" үлгэр загвар ашиглагдсан гэж дүгнэлээ. Домай объект болох Customer, Order, OrderItem, Item зэрэг классууд нь Observable-ээс удамшиж, өөрийн төлөв өөрчлөгдөх мөчид \verb|notifyObservers()|-ыг дуудаж бүх бүртгэлтэй Observer-уудад мэдээлж байна. CustomerManagement, OrderManagement, ItemManagement зэрэг класс нь Observer интерфейсийг хэрэгжүүлэн, \verb|update()| аргаар домайн объектоос ирсэн өөрчлөлтийг хүлээн авч байна. Ингэснээр системийн бүх чухал домэйн объектууд үзэгдлийн төв болж, менежер бүр эдгээр үзэгдлийг сонсож, өөрийн цуглуулгад харгалзах домэйн объектыг дахин оруулах/шинэчлэх нь төвлөрсөн удирдлага үүсгэхээс гадна домэйн объект, менежерүү- дийн хооронд нягт уялдаа холбоог бий болгож, нийцэмжтэй байдлыг хадгалж байна.
 
-% \begin{lstlisting}[language=Java, caption=, frame=single]
-% \end{lstlisting}
-
-
-% \begin{lstlisting}[language=Java, caption=, frame=single]
-% \end{lstlisting}
-
-
-% 5.3 Singleton Pattern
-% Intent: Тухайн классийн ганцхан экземпляр (instance) байдаг гэдгийг баталгаажуулж, олон удаа үүсэхээс хамгаалдаг.
-% Applicability:
-% •	Нэглхэн resource (DB холболт, конфигурацийн тохиргоо) хуваарилах шаардлагатай.
-% Participants:
-% •	Singleton Class: DBConnection, Datenquelle
-% Consequences:
-% •	Global access point үүснэ.
-% •	Тестлэхэд заримдаа бэрхшээл үүсгэж, dependency injection-тэй зэрэгцүүлэн ашиглахгүй болбол.
-% Жишээ код:
-% public class DBConnection {
-%     private static volatile DBConnection instance;
-%     private Connection conn;
-%     private DBConnection() { /* connect */ }
-%     public static DBConnection getInstance() {
-%         if (instance == null) {
-%             synchronized(DBConnection.class) {
-%                 if (instance == null) instance = new DBConnection();
-%             }
-%         }
-%         return instance;
-%     }
-% }
- 
-% 5.4 Composite Pattern
-% Intent: Бүхэл–хэсэг (whole–part) харилцааг нэгтгэн, нэг объект ба хэд хэдэн ижил төрлийн объектын мод бүтэцтэй зохион байгуулалт бий болгодог.
-% Applicability:
-% •	Нэг Order нь олон OrderItem агуулсан тохиолдолд.
-% Participants:
-% •	Component: AuftragComponent (interface)
-% •	Leaf: Auftragsposition
-% •	Composite: Auftrag (ихээр OrderItem-уудыг барьдаг)
-% Consequences:
-% •	Дүрслэл тодорхой, ижил үйлдэлд ижил интерфейс ашиглагдана.
-% •	Доторх мод бүтцийн гүнзгий давталт хэрэгтэй бол гүйцэтгэл саатах магадлалтай.
-% Жишээ код:
-% interface AuftragComponent { void print(); }
-% class Auftragsposition implements AuftragComponent { public void print() { ... } }
-% class Auftrag implements AuftragComponent {
-%     private List<Auftragsposition> items;
-%     public void add(Auftragsposition p) { items.add(p); }
-%     public void print() { for (Auftragsposition p: items) p.print(); }
-% }
- 
-% 5.5 MVC (Model–View–Controller) Pattern
-% Intent: Хэрэглэгчийн интерфейс (View), бизнес логик (Model), үйлдлийн урсгал (Controller)-ыг тусад нь тусгаарлаж, харилцан нөлөөллийг багасгах.
-% Applicability:
-% •	UI бүхий desktop, web эсвэл mobile аппликейшн хөгжүүлэхдээ.
-% Participants & Flow:
-% 1.	Model: Kunde, Artikel, Auftrag — өгөгдлийн асуудлыг илэрхийлэх.
-% 2.	View: BenutzerGUI — хэрэглэгчид харагдах интерфейс.
-% 3.	Controller: OrderController — View-аас ирсэн үйлдлийг хүлээн авч Model дээр үйлдэл гүйцэтгэнэ.
-% Жишээ диаграмм (high-level):
-% [User Action] -> Controller -> Model -> View Update
-% Жишээ код:
-% public class OrderController {
-%     private OrderManager model;
-%     private OrderView view;
-%     public void handleAddOrder(Auftrag o) {
-%         model.addOrder(o);
-%         view.refresh(model.getOrders());
-%     }
-% }
- 
-% 5.6 Observer Pattern
-% Intent: Subject (Observable) болон түүний харагч объектууд (Observers) хоорондын уялдааг тодорхой болгож, Subject-ийн төлөв (state) өөрчлөгдөх бүрт харагчид автоматаар мэдээлэл өгч шинэчлэгддэг боломжийг олгоно.
-% Applicability:
-% •	Domain Model дэх объектоудын статус өөрчлөгдөхөд бусад бүрэлдэхүүн (UI TableModels, Verwaltung classes, ReportGenerator) автоматаар шинэчлэгдэх шаардлагатай.
-% •	Тасралтгүй өгөгдлийн урсгал ба UI синхронизац (жишээ нь, шинэ Order нэмэгдэх, OrderItem-уудын тоо эсвэл утга өөрчлөгдөх үед хүснэгт автоматаар шинэчлэгдэх) хэрэгтэй тохиолдолд.
-% Structure (UML-д илэрсэнээр):
-%             +--------------+            +---------------------+
-%             |  Observable  |            |     Observer        |
-%             +--------------+            +---------------------+
-%             | +addObserver()|<>-------->*| +update(Observable, Object)|
-%             | +notifyObservers()|        +---------------------+
-%             +--------------+
-%                   ^   ^
-%                   |   |
-%   +---------------+   +-------------------+
-%   |                                    |
-% +--------+                         +-------------+
-% | Kunde  |                         | Auftragsposition |
-% +--------+          ...            +-------------+
-%   ^                                         ^
-%   |                                         |
-% +---------+                          +--------------+
-% | Auftrag |                          | Artikelverwaltung |
-% +---------+                          +--------------+
-% •	Domain Objects (Subjects): Kunde, Auftrag, Auftragsposition, Artikel зэрэг ангиуд нь Observable-ээс өвлөн авч, өөрийн төлөв өөрчлөгдөх мөчид notifyObservers()-ыг дуудаж бүх бүртгэлтэй Observer-уудыг мэдэгддэг.
-% •	Verwaltung Classes (Observers): Kundenverwaltung, Auftragsverwaltung, Artikelverwaltung зэрэг нь Observer интерфейсийг хэрэгжүүлэн, update() аргаар domain объектоос ирсэн өөрчлөлт, шинэчлэлтийг хүлээн авдаг.
-% •	TableModel Classes (UI Observers): ArtikelTableModel, AuftragTableModel, AuftragspositionTableModel зэрэг нь мөн Observer интерфейсийг хэрэгжүүлэн, update() дотор fireTableDataChanged() эсвэл тухайн мөр/баганыг шинэчлэх аргуудыг дуудаж хэрэглэгчийн дэлгэцийн хүснэгтийг автоматаар шинэчилдэг.
-% Collaboration:
-% 1.	Domain объектын setXxx(...) эсвэл бизнесийн үйлдлээр (addOrder, removePosition, updatePrice гэх мэт) төлөв нь өөрчлөгдөх үед aktualisieren() дотор notifyObservers(this, context) дуудаж өгөгдлийг тараана.
-% 2.	Бүртгэгдсэн Verwaltung ба TableModel объектуудын update(Observable o, Object arg) дотор ирсэн мэдээллийг боловсруулан бизнес давхарга болон UI-г шинэчилнэ.
-% Consequences:
-% •	UI ба Domain Logic хоорондох хатуурсан coupling-ийг багасгаж, хоёр талын автомат синхронизацад дэмжлэг үзүүлнэ.
-% •	Java-ийн хуучин Observable/Observer ашигласан тул дээд төвшний flexibility-ийн хувьд зарим хязгаарлалттай (abstract class тул олон өвлөн авалт боломжгүй гэх мэт).
-% •	Их олон объект холбогдсоны улмаас notification avalanche үүсэх, performance буурах эрсдэлтэй.
-% Жишээ код:
-% public class Auftrag extends Observable {
-%     public void setLieferdatum(LocalDate date) {
-%         this.lieferdatum = date;
-%         aktualisieren(); // дотор нь notifyObservers(this)
-%     }
-% }
-
-% public class AuftragTableModel extends AbstractTableModel implements Observer {
-%     public void update(Observable o, Object arg) {
-%         // шинэчлэгдсэн өгөгдлийг авсаны дараа хүснэгтээ шинэчилнэ
-%         fireTableDataChanged();
-%     }
-% }
-
-% public class Auftragsverwaltung implements Observer {
-%     public void update(Observable o, Object arg) {
-%         // бизнес давхарга дахь internal collection-ээ шинэчилнэ
-%     }
-% }
-% System Usage Highlights:
-% •	Flexible Event-Driven Архитектур: Системийн бүх чухал domain объектууд (Kunde, Artikel, Auftrag, Auftragsposition) нь Observable-ээс өвлөх замаар үзэгдлийн (event) төв болсон.
-% •	Автомат UI Refresh: UI TableModel-ууд Observer-уудын хувьд табыг автоматаар шинэчлэн үзүүлдэг.
-% •	Verwaltung Coordination: *verwaltung класс бүр domain объект болгон өөрийн collection-руу дахин оруулан, төвлөрсөн менежмент хийдэг.
-
+\subsubsection{"Composite" үлгэр загвар}
 
 % \begin{figure}
 % 	\centering
