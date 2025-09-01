@@ -88,34 +88,54 @@ OrderManagement классын статик талбар дээр шууд \verb
 
 \subsubsection{"Observer" үлгэр загвар}
 
-OrderManagement классын \verb|hinzufuegen()| арга дотор \verb|auf.addObserver(this)| гэж байгаа нь Singleton объект өөрөө Observable объектын өөрчлөлтийг хүлээн авч DAO-руу өөрчлөлт илгээж байна. Үүнийг ажигласнаар "Observer" үлгэр загвар ашиглагдсан гэж дүгнэлээ. Домай объект болох Customer, Order, OrderItem, Item зэрэг классууд нь Observable-ээс удамшиж, өөрийн төлөв өөрчлөгдөх мөчид \verb|notifyObservers()|-ыг дуудаж бүх бүртгэлтэй Observer-уудад мэдээлж байна. CustomerManagement, OrderManagement, ItemManagement зэрэг класс нь Observer интерфейсийг хэрэгжүүлэн, \verb|update()| аргаар домайн объектоос ирсэн өөрчлөлтийг хүлээн авч байна. Ингэснээр системийн бүх чухал домэйн объектууд үзэгдлийн төв болж, менежер бүр эдгээр үзэгдлийг сонсож, өөрийн цуглуулгад харгалзах домэйн объектыг дахин оруулах/шинэчлэх нь төвлөрсөн удирдлага үүсгэхээс гадна домэйн объект, менежерүү- дийн хооронд нягт уялдаа холбоог бий болгож, нийцэмжтэй байдлыг хадгалж байна.
+OrderManagement классын \verb|hinzufuegen()| арга дотор \verb|auf.addObserver(this)| гэж байгаа нь Singleton объект өөрөө Observable объектын өөрчлөлтийг хүлээн авч DAO\footnote{Data Access Object нь программын бизнес логикийг өгөгдлийн тогтвортой байдлын логикоос тусгаарлахын тулд програм хангамж боловсруулахад ашигладаг зохиомжийн өөр нэгэн үлгэр загвар юм. DAO нь өгөгдлийн эх үүсвэртэй холбоотой бүх үйлдлийг (өгөгдлийн сан эсвэл API гэх мэт) багтааж, хийсвэрлэдэг тусгай давхаргын үүрэг гүйцэтгэдэг бөгөөд програмын үлдсэн хэсэг нь өгөгдөл хэрхэн, хаана хадгалагдаж байгаагаас хамааралгүй байх боломжийг олгодог. Энэхүү тусгаарлалт нь кодын зохион байгуулалтыг сайжруулж, хуурамч өгөгдлийг зөвшөөрөх замаар програмыг шалгахад хялбар болгож, бизнесийн үндсэн логикт нөлөөлөхгүйгээр өгөгдөл хадгалах механизмыг өөрчлөх уян хатан байдлыг хангадаг.}-руу өөрчлөлт илгээж байна. Үүнийг ажигласнаар "Observer" үлгэр загвар ашиглагдсан гэж дүгнэлээ. Домайн объект болох Customer, Order, OrderItem, Item зэрэг классууд нь Observable-ээс удамшиж, өөрийн төлөв өөрчлөгдөх мөчид \verb|notifyObservers()|-ыг дуудаж бүх бүртгэлтэй Observer-уудад мэдээлж байна. CustomerManagement, OrderManagement, ItemManagement зэрэг класс нь Observer интерфейсийг хэрэгжүүлэн, \verb|update()| аргаар домайн объектоос ирсэн өөрчлөлтийг хүлээн авч байна. Ингэснээр системийн бүх чухал домэйн объектууд үзэгдлийн төв болж, менежер бүр эдгээр үзэгдлийг сонсож, өөрийн цуглуулгад харгалзах домэйн объектыг дахин оруулах/шинэчлэх нь төвлөрсөн удирдлага үүсгэхээс гадна домэйн объект, менежерүү- дийн хооронд нягт уялдаа холбоог бий болгож, нийцэмжтэй байдлыг хадгалж байна.
 
 \subsubsection{"Composite" үлгэр загвар}
+\verb|DAO<T extensions TransferObject>| интерфэйсийг хэрэгжүүлж болон стандарт CRUD үйлд- лүүд (create, read, update, delete) дээр нэмээд \verb|nextKey()|-ийг зарлаж, \verb|Iterable<T>|-г хүртэл өргөтгөсөн байна.
+\begin{figure}
+	\centering
+	\includegraphics[width=15cm]{images/diagram3.png}
+	\caption{"DAO" багцын классын диаграм}
+	\label{fig:diagram3}
+\end{figure}
+Энэ нь DAO интерфэйсийг хэрэгжүүлсэн класс бүр нь өөрийн төрөлд харгалзах домэйн объектын цуглуулгыг удирдах үүрэгтэй болохыг илтгэнэ. Жишээ нь, доорх кодонд CustomerDAO нь Customer домэйн объектын цуглуулгыг удирдаж байна. Үүнийг ажигласнаар "Composite" үлгэр загвар ашиглагдсан гэж дүгнэлээ. Учир нь DAO интерфэйсийг хэрэгжүүлсэн класс бүр нь өөрийн төрөлд харгалзах домэйн объектын цуглуулгыг удирдах үүрэгтэй бөгөөд эдгээр DAO-уудын цуглуулга нь системийн бүх домэйн объектын цуглуулгыг бүрдүүлж байна. Энэ нь "Composite" үлгэр загварын үндсэн шинж чанар юм.
 
-% \begin{figure}
-% 	\centering
-% 	\includegraphics[width=15cm]{images/plantuml.png}
-% 	\caption{UML багажаар үүсгэсэн "Applicationlogic" багцын классын диаграм}
-% 	\label{fig:hhe}
-% \end{figure}
+\begin{lstlisting}[language=Java, caption=KundeTO класс, frame=single]
+public class KundeTO implements TransferObject
+{
+	...
+  public KundeTO(int kundennr, String anrede, String name,
+      String vorname, String ort, String plz,
+      String strasse, String debitorennr)
+  {
+    this.kundennr = kundennr;
+    this.anrede = anrede;
+    this.name = name;
+    this.vorname = vorname;
+    this.strasse = strasse;
+    this.plz = plz;
+    this.ort = ort;
+    this.debitorennr = debitorennr;
+  }
 
-\subsubsection{DAO (Data Access Object) үлгэр загвар}
-Intent: Бизнес логик болон өгөгдлийн сан (database) хоорондох харилцааг салгаж, өгөгдлийн хандалтын кодыг төвлөрүүлдэг. Ингэснээр өгөгдлийн сангийн төрөл, схем өөрчлөгдөхөд бусад давхаргаас хамааралгүйгээр шинэчлэлт хийх боломжтой.
-Applicability:
-Өгөгдлийн сан, файлын систем, REST үйлчилгээ болон бусад I/O үйлдлүүдтэй тухайн давхаргын кодыг багцлах шаардлагатай үед.
-Олон бизнес обьект өгөгдлийн үйлдэл хийх үед давталт, дубликацыг багасгах шаардлагатай бол.
-Participants:
-DAO Interface: SqlDAO<T> — нийтлэг өгөгдөл унших, бичих аргатай.
-Concrete DAO: ArtikelDAO, KundeDAO, AuftragDAO — хүссэн хүснэгтийн өргөтгөл.
-Model: Artikel, Kunde, Auftrag классууд.
-Collaboration:
-Business логик DAO interface-ээр дамжин өгөгдөл авах/хадгална.
-Concrete DAO-ууд өгөгдлийн сангийн SQL query-үүдийг гүйцэтгэнэ.
-Consequences:
-Давхаргын тусгаарлалт сайжирна.
-Тестлэхэд mock DAO ашиглах замаар өгөгдлийн сангүйгээр unit тест бичиж болно.
-Өгөгдлийн сангийн холболт өөрчлөгдөхөд DAO давхаргыг л шинэчлэхэд хангалттай.
-Жишээ код:
+  public int getKey()
+  {
+    return kundennr;
+  }
 
-\begin{lstlisting}
+  public void setKey(int newKey)
+  {
+    kundennr = newKey;
+  }
+
+}
 \end{lstlisting}
+
+\section{МУИС-ийн дипломын ажлыг удирдах системийн архитектур, зохиомж}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=15cm]{images/image.png}
+	\caption{Дипломын ажлыг удирдах системийн классын диаграм}
+	\label{fig:image}
+\end{figure}
