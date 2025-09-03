@@ -52,6 +52,13 @@
 \definecolor{purple}{rgb}{0.128,0,0.128}
 \usepackage{longtable}
 \usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{calc}
+\usepackage{ragged2e}
+
+% Төвлөрсөн p-стайл тодорхойлж байна: L{<width>}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
 \lstdefinestyle{mystyle}{
     basicstyle=\ttfamily\small,
     backgroundcolor=\color{backcolour},   
