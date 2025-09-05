@@ -266,19 +266,20 @@ Excel хуулга боловсруулахад "Template Method" үлгэр з�
 
 Энэ урсгал тогтмол боловч зарим алхам (жишээлбэл, багануудыг хэрхэн буулгах) нь банк бүрийн форматаас хамааран өөрчлөгдөж болно. Үүний тулд бүх хувилбар тус бүрээр дахин код бичихийн оронд ерөнхий алгоритмыг нэг загварт хадгалж, хувьсах алхмуудыг буулгалтын загвараар уян хатан болгож чадна. 
 
-\subsection{"Factory" үлгэр загварын зохиомжийн тайлбар}
-
-"Factory" үлгэр загварыг MappingConfigLoader классад тусгасан. Энэ класс нь буулгалтын загвар зэрэг объектуудыг үүсгэх үүрэгтэй бөгөөд тухайн объектыг хэрхэн бүтээх нарийн логикийг системийн бусад хэсэгт ил гаргахгүй. Жишээлбэл, JSON буулгалтын загварыг уншиж, тохирох буулгалтын объект үүсгэх ажлыг хариуцна.
-
 \subsection{"Builder" үлгэр загварын зохиомжийн тайлбар}
 
 Модуль тодорх StatementHdr, StatementDetail зэрэг энтити объектуудыг үүсгэхэд "Builder" үлгэр загварыг ашигласан (\ref{fig:builder} зургийг харна уу). Эдгээр энтитинүүд нь олон талбартай бөгөөд бүх утгууд нь нэг дор бэлэн байдаггүй. Барилгачин нь урт байгуулагч бичихгүйгээр, эсвэл бүх талбарыг гараар тохируулахгүйгээр объектуудыг алхам алхмаар үүсгэх боломжтой болгодог. Ирээдүйд шинэ талбар нэмэх шаардлага гарвал байгуулагч бүрийг өөрчлөхгүй, зөвхөн барилгачинд нэмэхэд хангалттай. (\ref{fig:builder} зургийг харна уу)
-\begin{figure}[h]
+\begin{figure}[H]
 		\centering
 		\includegraphics[width=15cm]{images/builder.png}
 		\caption{"Builder" үлгэр загварын зохиомжийн диаграм}
 		\label{fig:builder}
 \end{figure}
+
+\subsection{"Factory" үлгэр загварын зохиомжийн тайлбар}
+
+"Factory" үлгэр загварыг MappingConfigLoader классад тусгасан. Энэ класс нь буулгалтын загвар зэрэг объектуудыг үүсгэх үүрэгтэй бөгөөд тухайн объектыг хэрхэн бүтээх нарийн логикийг системийн бусад хэсэгт ил гаргахгүй. Жишээлбэл, JSON буулгалтын загварыг уншиж, тохирох буулгалтын объект үүсгэх ажлыг хариуцна.
+
 \subsection{Модулийн статик загвар}
 Шинжилгээний үед тодорхойлсон өгөгдлийн  $\digamma$ стандарт бүтэцтэй нийцэхээр model багцын классын диаграмыг \ref{fig:model} зурагт үзүүлэв. Мэдээж getter, setter, toString зэрэг агуудыг агуулах бөгөөд эдгээрийг диаграмд оруулаагүй болно. Модулийн гол зохиомжийн диаграмыг \ref{fig:design} зурагт үзүүлэв.
 
@@ -298,3 +299,389 @@ Excel хуулга боловсруулахад "Template Method" үлгэр з�
 
 \newpage
 \section{MinuPOS системийн банкны Excel хуулгыг боловсруулах модулийн хэрэгжүүлэлт}
+
+\subsection{ExcelParserService}
+Файлын форматын олон янз байдлыг дэмжихийн тулд зөвхөн өгөгдсөн буулгалтын загвар дээр тулгуурлан Excel файлаас өгөгдлийг шүүж авдаг байхаар хэрэгжүүлсэн. Жишээлбэл, Excel файлын толгой мөрийн индексийг зааж өгсөн тохиолдолд тухайн мөрөөс баганын нэрсийг задлан, дараагийн мөрүүдийг боловсруулахад ашигладаг. Мөн \verb|FORMULA| төрлийн нүднүүдийн бодит утгыг авах, \verb|NUMERIC| төрлийн нүднүүдийг тоо эсвэл огноо байдлаар ялгаж боловсруулах зэрэгт DataFormatter классыг ашигласан.\\
+
+\quad \quad POI-ийн \verb|"Cannot get a NUMERIC value from a STRING cell"| алдааг засахын тулд CellType-ыг шалгаж, зөвхөн \verb|NUMERIC| үед \verb|getNumericCellValue()| эсвэл \verb|getDateCellValue()| дуудаж, бусад тохиолдолд DataFormatter-аар string утгыг авдаг болгосон. Харин \verb|FORMULA| төрлийн хувьд \verb|getCachedFormulaResultType()| ашиглаж, \verb|row.getLastCellNum()|-ийн давталт дотор \verb|<| нөхцөл тавьсан. Мөн \verb|mapToDetail| болон \verb|mapToStatement| хэсэгт String утгыг Double эсвэл Date рүү parse хийдэг хэсэг нэмсэн.\\
+\begin{lstlisting}[language=Java, caption=Excel файлаас DataFormatter ашиглан өгөгдлийг шүүж авах, frame=single]
+for (int ci = 0; ci < lastCellNum; ci++) {
+		Cell cell = row.getCell(ci);
+		String key = headerMap.containsKey(ci) ? headerMap.get(ci) : String.valueOf(ci);
+		Object val = null;
+		if (cell != null) {
+				CellType cellType = cell.getCellType();
+				if (cellType == CellType.FORMULA) {
+						cellType = cell.getCachedFormulaResultType();
+				}
+
+				if (cellType == CellType.NUMERIC) {
+						if (DateUtil.isCellDateFormatted(cell)) {
+								val = cell.getDateCellValue();
+						} else {
+								val = cell.getNumericCellValue();
+						}
+				} else if (cellType == CellType.BOOLEAN) {
+						val = cell.getBooleanCellValue();
+				} else {
+						String txt = dataFormatter.formatCellValue(cell).trim();
+						val = txt;
+				}
+
+				if (val != null && !(val instanceof String && ((String) val).isEmpty())) {
+						allEmpty = false;
+				}
+		}
+		rowMap.put(key, val);
+}
+\end{lstlisting}
+
+
+\subsection{ImportService}
+
+ImportService нь Excel файлыг уншиж, буулгалтын загвар ашиглан өгөгдлийг стандарт форматад хувиргаж, өгөгдлийн санд хадгалах гол үйлчилгээ юм. ExcelParserService-ашиглан файлыг задлах, MappingEngine-ээр өгөгдлийг стандарт форматад хувиргах, Repository-гүүдээр өгөгдлийн санд хадгалах, мөн буулгалтын загваруудыг JSON хэлбэрээр нөөцөөс унших зэрэг үүргүүдтэй. Уг үйлчилгээний гол алхмуудыг дараах байдлаар нэгтгэн тайлбарлав:
+
+\begin{itemize}
+	\item Буулгалтын загвар байхгүй тохиолдолд файлыг боловсруулахгүй.
+	\item Excel-ийн мөрүүдийг \verb|STATEMENT_ID| талбараар ялгаж, толгой өгөгдөл болон дэлгэрэнгүй өгөгдлийг тодорхойлно.
+	\item Ижил StatementID-тай өгөгдөл дахин орж ирвэл шинэчлэнэ, эсвэл шинээр үүсгэнэ.
+	\item Дэлгэрэнгүй мөрүүдийг холбогдох толгойтой StatementID ашиглан холбоно.
+	\item Дутуу эсвэл буруу өгөгдөлтэй мөрүүдийг автоматаар бөглөж, шаардлагатай тохиолдолд алгасаж, алдааны статистикийг цуглуулна.
+	\item Нөөцөөс mappings/*.json файлуудыг хайж, бүгдийг уншиж JsonNode объектуудын жагсаалт болгон буцаана.
+	\item Импортлох явцад statementsInserted, statementsUpdated, detailsInserted, detailsSkipped зэрэг статистик үзүүлэлтүүдийг цуглуулж, хэрэглэгчдэд үр дүнгийн мэдээлэл өгнө.
+\end{itemize}
+
+\begin{lstlisting}[language=Java, caption=Давхардсан өгөгдлийг шийдвэрлэх, frame=single]
+	Optional<StatementHdr> existing = (s.getStatementId() != null) ?
+					hdrRepo.findByStatementIdAndSourceBank(s.getStatementId(), sourceBank) : Optional.empty();
+
+	if (existing.isPresent()) {
+			StatementHdr ex = existing.get();
+			ex.setRawPayload(s.getRawPayload());
+			ex.setAccountName(s.getAccountName());
+			ex.setAccountNo(s.getAccountNo());
+			ex.setStartDate(s.getStartDate());
+			ex.setEndDate(s.getEndDate());
+			hdrRepo.save(ex);
+	} else {
+			hdrRepo.save(s);
+	}
+\end{lstlisting}
+
+\begin{lstlisting}[language=Java, caption=Нөөцийн хэсгээс буулгалтын загваруудын мэдээллийг унших, frame=single]
+	public List<JsonNode> loadMappings() throws Exception {
+			List<JsonNode> list = new ArrayList<>();
+			Resource[] resources = new PathMatchingResourcePatternResolver()
+							.getResources("classpath*:mappings/*.json");
+			for (Resource r : resources) {
+					String s;
+					try (InputStream in = r.getInputStream()) {
+							s = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+					}
+					if (s != null && !s.isEmpty()) {
+							list.add(objectMapper.readTree(s));
+					}
+			}
+			return list;
+	}
+\end{lstlisting}
+
+\subsection{MappingEngine}
+
+MappingEngine класс нь Excel-ээс уншсан  \verb|Map<String, Object>| хэлбэртэй өгөгдлийг MinuPOS системийн $\digamma$ стандарт бүтэцтэй StatementHdr болон StatementDetail объект руу хувиргах үүрэгтэй. Энэхүү үйлчилгээ нь банк бүрийн Excel хуулгын ялгаатай форматыг уян хатан дэмжих, өгөгдлийн төрөл хувиргалт, гүйлгээний дүнг зөв тодорхойлох, алдааны толерант байдал зэрэг гол асуудлуудыг шийддэг. Уг үйлчилгээний гол алхмуудыг дараах байдлаар нэгтгэн тайлбарлав:
+\begin{itemize}
+	\item Текст, тоо, огноо зэрэг төрөл бүрийн өгөгдлийг зохих форматад хувиргана.
+	\item Банкууд гүйлгээний дүнг \verb|TXN_AMOUNT|, \verb|DEBIT|/\verb|CREDIT|, эсвэл баганын дугаар гэх мэт өөр өөрөөр илэрхийлдэг тул бүх боломжит хэлбэрүүдийг шалгаж, нэгдсэн дүн гаргана.
+	\item Excel-ээс уншсан өгөгдлийг тоо, огноо, текст хэлбэрээс стандартчилна.
+	\item Excel дотор огноонууд өөр өөр хэлбэрээр хадгалагддаг тул бүх хэлбэрийг стандарт LocalDateTime формат руу хувиргана.
+	\item Алдаа гарсан тохиолдолд процесс үргэлжилж, алдаатай өгөгдлийг алгасах боломжтой.
+\end{itemize}
+
+MappingEngine болон ImportService-д null-safety хамгаалалт нэмсэн. Ялангуяа mapping, mapping.mapping, statement/detail node-ууд байхгүй үед NPE үүсэхгүй болгов. mapToStatement болон mapToDetail функцүүд null буцааж болох тул ImportService-д үр дүнг шалгаж, null бол хадгалахгүй, алдааны лог бичдэг болгосон. Мөн loadMappings() функц classpath-аас InputStream ашиглан mapping JSON-уудыг зөв уншдаг болсон. Ингэснээр mapping.json дутуу эсвэл буруу үед систем унахгүй, алдааг логлоод үргэлжлүүлдэг болсон.\\ \\ \\
+\begin{lstlisting}[language=Java, caption=StatementHdr объект үүсгэх, frame=single]
+	public StatementHdr mapToStatement(Map<String, Object> row, JsonNode mapping, String sourceBank, String sourceFile) {
+			if (mapping == null || mapping.isMissingNode()) return null;
+			JsonNode stmtMap = mapping.get("statement");
+			if (stmtMap == null || stmtMap.isNull()) return null;
+			StatementHdr s = new StatementHdr();
+			s.setSourceBank(sourceBank);
+			s.setSourceFile(sourceFile);
+			s.setRawPayload(toJson(row));
+
+			s.setStatementId(getString(row, stmtMap, "STATEMENT_ID"));
+			s.setRequestId(getString(row, stmtMap, "REQUEST_ID"));
+			s.setBankCode(getString(row, stmtMap, "BANK_CODE"));
+			s.setAccountNo(getString(row, stmtMap, "ACCOUNT_NO"));
+			s.setAccountName(getString(row, stmtMap, "ACCOUNT_NAME"));
+			s.setMainFlag(getString(row, stmtMap, "MAIN_FLAG"));
+			s.setTxnCount(getInt(row, stmtMap, "TXN_COUNT"));
+			s.setIncome(getDecimal(row, stmtMap, "INCOME"));
+			s.setOutcome(getDecimal(row, stmtMap, "OUTCOME"));
+			s.setStartDate(getDateTime(row, stmtMap, "START_DATE"));
+			s.setEndDate(getDateTime(row, stmtMap, "END_DATE"));
+			s.setCreatedDate(getDateTime(row, stmtMap, "CREATED_DATE"));
+			s.setStatementDate(getDateTime(row, stmtMap, "STATEMENT_DATE"));
+
+			return s;
+	}
+\end{lstlisting}
+
+\begin{lstlisting}[language=Java, caption=StatementDetail объект үүсгэх, frame=single]
+	public StatementDetail mapToDetail(Map<String, Object> row, JsonNode mapping, String sourceBank) {
+			if (mapping == null || mapping.isMissingNode()) return null;
+			JsonNode dmap = mapping.get("detail");
+			if (dmap == null || dmap.isNull()) return null;
+			StatementDetail d = new StatementDetail();
+			d.setSourceBank(sourceBank);
+			d.setRawPayload(toJson(row));
+
+			d.setDetailId(getString(row, dmap, "DETAIL_ID"));
+			d.setStatementId(getString(row, dmap, "STATEMENT_ID"));
+			d.setTxnType(getString(row, dmap, "TXN_TYPE"));
+			d.setTxnDesc(getString(row, dmap, "TXN_DESC"));
+			d.setCoAccount(getString(row, dmap, "CO_ACCOUNT"));
+			d.setUseFlag(getString(row, dmap, "USE_FLAG"));
+			d.setUseFlagUserId(getString(row, dmap, "USE_FLAG_USER_ID"));
+			d.setStatus(getString(row, dmap, "STATUS"));
+
+			d.setTxnDate(getDateTime(row, dmap, "TXN_DATE"));
+			d.setUseFlagDate(getDateTime(row, dmap, "USE_FLAG_DATE"));
+
+			d.setPreBalance(getDecimal(row, dmap, "PRE_BALANCE"));
+			d.setPostBalance(getDecimal(row, dmap, "POST_BALANCE"));
+			d.setTxnAmount(pickTxnAmount(row, dmap));
+			return d;
+	}
+\end{lstlisting}
+
+\begin{lstlisting}[language=Java, caption=Өгөгдлийн төрөл хувиргалт, frame=single]
+	private String normalizeValue(Object v) {
+			if (v == null) return null;
+			if (v instanceof Number) {
+					double d = ((Number) v).doubleValue();
+					if (d == Math.floor(d)) return String.valueOf((long) d);
+					return String.valueOf(d);
+			} else if (v instanceof Date) {
+					return java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME
+									.format(((Date) v).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+			} else {
+					return String.valueOf(v).trim();
+			}
+	}
+\end{lstlisting}
+
+\begin{lstlisting}[language=Java, caption=Огнооны хувиргалт, frame=single]
+	private LocalDateTime getDateTime(Map<String, Object> row, JsonNode mapRoot, String field) {
+			try {
+					JsonNode node = nodeFor(mapRoot, field);
+					if (node == null) return null;
+					String key = keyNameFromNode(node);
+					if (key == null) return null;
+					Object v = row.get(key);
+					if (v == null) return null;
+
+					if (v instanceof Date) {
+							return LocalDateTime.ofInstant(((Date) v).toInstant(), ZoneId.systemDefault());
+					} else if (v instanceof Number) {
+							double d = ((Number) v).doubleValue();
+							long epochMillis = (long) ((d - 25569d) * 86400d * 1000d); // excel serial -> epoch
+							return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault());
+					} else {
+							String s = String.valueOf(v).trim();
+							if (s.isEmpty()) return null;
+							try {
+									return LocalDateTime.parse(s);
+							} catch (Exception e1) {
+									try {
+											return LocalDate.parse(s).atStartOfDay();
+									} catch (Exception e2) {
+											try {
+													java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+													return LocalDateTime.parse(s, fmt);
+											} catch (Exception e3) {
+													// yyyy-MM-dd
+													try {
+															java.time.format.DateTimeFormatter f2 = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd");
+															return LocalDate.parse(s, f2).atStartOfDay();
+													} catch (Exception ignore) { }
+											}
+									}
+							}
+					}
+			} catch (Exception e) {
+					// hhe
+			}
+			return null;
+	}
+\end{lstlisting}
+
+
+\subsection{UploadController}
+
+Энэ UploadController класс нь Excel файл болон mapping configuration файлуудыг хүлээн авах, боловсруулах REST API эндпойнтуудыг нэгтгэсэн Spring Boot контроллер юм. Үндсэн үүргүүд нь:
+\begin{itemize}
+	\item Excel файлыг Multipart form data хэлбэрээр хүлээн авах.
+	\item Хэрэглэгчийн өгсөн эсвэл системд бэлэн байгаа буулгалтыг ашиглаж буулгалтын загвар боловсруулах.
+	\item ImportService-ийг дуудаж импортлох үйл явцыг эхлүүлэх.
+	\item Импортын статистик мэдээлэлтэй хамт үр дүнг буцаах.
+\end{itemize}
+
+\begin{lstlisting}[language=Java, caption=Буулгалтын загвар боловсруулах, frame=single]
+JsonNode mappingJson = null;
+if (mappingPart != null && !mappingPart.isEmpty()) {
+	tempMappingPath = Files.createTempFile("mapping-", ".json");
+	mappingPart.transferTo(tempMappingPath.toFile());
+	String mappingContent = Files.readString(tempMappingPath);
+	mappingJson = objectMapper.readTree(mappingContent);
+	logger.info("Using user-supplied mapping (mapping file).");
+} else {
+	Optional<JsonNode> maybe = mappingConfigLoader.getMappingByBankCode(bankType);
+	if (maybe.isPresent()) {
+		mappingJson = maybe.get();
+		logger.info("Using mapping from MappingConfigLoader for bankType={}", bankType);
+	} else {
+		return ResponseEntity.badRequest().body(Map.of(
+				"error", "No mapping provided and no mapping found for bankType: " + bankType,
+				"hint", "Upload a mapping JSON with the multipart key 'mapping' or add a mapping file to mappings/ folder"
+		));
+	}
+}
+\end{lstlisting}
+Хэрэглэгч буулгалтын файл өгсөн бол түүнийг, үгүй бол системийн буулгалтын загварыг ашиглана.
+
+\begin{lstlisting}[language=Java, caption=БФайлын урьдчилсан харагдац үүсгэх, frame=single]
+int sheetIndex = mappingJson.path("sheet").asInt(0);
+int headerRowIndex = mappingJson.path("headerRowIndex").asInt(-1);
+var previewRows = excelParserService.parseFile(tempFilePath.toFile(), sheetIndex, headerRowIndex);
+int previewCount = previewRows.size();
+\end{lstlisting}
+
+\subsection{MappingConfigLoader}
+MappingConfigLoader классыг хэрэгжүүлэхэд банк бүрийн Excel хуулгын формат, файл нэр, sheet нэр, баганын бүтэц зэрэг маш олон янзын хувилбарыг уян хатан дэмжих шаардлагыг голчлон анхаарсан. Өмнө нь формат бүрт тусдаа парсер, код бичих шаардлагатай байсан нь засварлахад хүндрэлтэй, алдааны магадлал өндөр байв. Иймд дараах зарчмуудыг баримталсан:
+
+\begin{itemize}
+	\item MappingConfigLoader нь буулгалт JSON-уудыг classpath-аас болон файл системээс ачаалах боломжтой. Ингэснээр deployment бүрт тохиргооны файлуудыг өөрчлөх, шинэ банк нэмэхэд кодонд өөрчлөлт хийхгүйгээр шийдэж чадна.
+	\item Банк бүрийн буулгалтыг bankCode-оор индексжүүлж, хурдан lookup хийх боломжтой болгосон. Энэ нь олон буулгалт дундаас зөв буулгалтыг автоматаар сонгоход чухал.
+	\item Файлын нэрээр буулгалтыг автоматаар олж сонгох логик нэмсэн. Ингэснээр хэрэглэгч буруу буулгалт сонгох эрсдэл багассан.
+	\item Буулгалтуудыг runtime үед дахин ачаалах боломжтой болгосон. Энэ нь production орчинд шинэ буулгалт нэмэх, засварлахад системийг зогсоохгүйгээр шийдэж чадна.
+	\item Буулгалтын файл буруу, дутуу, эсвэл parse алдаа гарсан тохиолдолд бусад буулгалтуудыг үргэлжлүүлэн ачаалж, системийн үндсэн үйл ажиллагаа тасалдахгүй байхаар шийдсэн.
+\end{itemize}
+
+Эдгээр шийдлүүдийн үр дүнд MinuPOS системд шинэ банк нэмэх, хуучин банкны формат өөрчлөгдөх, буулгалт-ийг засварлах зэрэг бүх үйлдлийг кодонд өөрчлөлт хийхгүйгээр зөвхөн буулгалт JSON-уудыг засах замаар шийддэг болсон. Энэ нь хөгжүүлэлтийн хурд, засварлахад хялбар байдал, алдааны магадлалыг эрс бууруулсан.
+
+\begin{lstlisting}[language=Java, frame=single, caption=Classpath-аас буулгалтын JSON-уудыг ачаалах]
+private void loadFromClasspath(String resourcePattern) {
+		try {
+				logger.info("Loading mapping resources from classpath pattern '{}'", resourcePattern);
+				PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+				Resource[] resources = resolver.getResources(resourcePattern);
+				for (Resource r : resources) {
+						try {
+								JsonNode node = objectMapper.readTree(r.getInputStream());
+								addMapping(node);
+								logger.debug("Loaded mapping from classpath resource: {}", r.getFilename());
+						} catch (Exception e) {
+								logger.warn("Failed to parse mapping resource {}: {}", r.getFilename(), e.getMessage());
+						}
+				}
+		} catch (IOException e) {
+				logger.warn("No mapping resources found for pattern {}: {}", resourcePattern, e.getMessage());
+		}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=Java, frame=single, caption=Файл системээс mapping JSON-уудыг ачаалах]
+private void loadFromFilesystem(String folderPath) {
+		File folder = new File(folderPath);
+		if (!folder.exists() || !folder.isDirectory()) {
+				logger.debug("Mappings folder '{}' does not exist or not a directory — skipping filesystem load.", folderPath);
+				return;
+		}
+		logger.info("Loading mapping JSON files from filesystem folder '{}'", folderPath);
+		File[] files = folder.listFiles((d, name) -> name.toLowerCase().endsWith(".json"));
+		if (files == null) return;
+		Arrays.stream(files).sorted().forEach(f -> {
+				try {
+						String content = new String(Files.readAllBytes(f.toPath()));
+						JsonNode node = objectMapper.readTree(content);
+						addMapping(node);
+						logger.debug("Loaded mapping from filesystem file: {}", f.getName());
+				} catch (Exception e) {
+						logger.warn("Failed to parse mapping file {}: {}", f.getName(), e.getMessage());
+				}
+		});
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=Java, frame=single, caption=Банкны кодоор mapping-ийг индексжүүлэх]
+private void addMapping(JsonNode node) {
+	mappingsList.add(node);
+	
+	JsonNode bankCodeNode = node.get("bankCode");
+	if (bankCodeNode != null && bankCodeNode.isTextual()) {
+		String bankCode = bankCodeNode.asText().trim();
+		if (!bankCode.isEmpty()) {
+			mappingsByBankCode.put(bankCode, node);
+		}
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=Java, frame=single, caption=Файлын нэрээр mapping автоматаар сонгох]
+public Optional<JsonNode> findMappingForFile(String fileName, String sheetName) {
+		if (fileName == null) return Optional.empty();
+		String name = new File(fileName).getName();
+		// 1
+		for (JsonNode cfg : mappingsList) {
+				JsonNode patterns = cfg.get("filePatterns");
+				if (patterns != null && patterns.isArray()) {
+						for (JsonNode p : patterns) {
+								if (!p.isTextual()) continue;
+								String patternText = p.asText().trim();
+								if (patternText.isEmpty()) continue;
+
+								try {
+										Pattern pattern = Pattern.compile(patternText);
+										if (pattern.matcher(name).find()) {
+												return Optional.of(cfg);
+										}
+								} catch (Exception rex) {matching (strip .* common pattern)
+										String plain = patternText.replace(".*", "");
+										if (!plain.isEmpty() && name.contains(plain)) {
+												return Optional.of(cfg);
+										}
+								}
+						}
+				}
+		}
+
+		// 2
+		if (sheetName != null && !sheetName.trim().isEmpty()) {
+				String sheet = sheetName.trim().toLowerCase();
+				for (JsonNode cfg : mappingsList) {
+						JsonNode sheetNode = cfg.get("sheetName");
+						if (sheetNode != null && sheetNode.isTextual()) {
+								String s = sheetNode.asText().trim().toLowerCase();
+								if (!s.isEmpty() && sheet.contains(s)) {
+										return Optional.of(cfg);
+								}
+						}
+				}
+		}
+		// 3
+		if (mappingsList.size() == 1) {
+				return Optional.of(mappingsList.get(0));
+		}
+		return Optional.empty();
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=Java, frame=single, caption=Runtime reload хийх capability]
+public synchronized void reload() {
+	try {
+		loadMappings();
+	} catch (IOException e) {
+		logger.error("Failed to reload mapping files: {}", e.getMessage(), e);
+	}
+}
+\end{lstlisting}
